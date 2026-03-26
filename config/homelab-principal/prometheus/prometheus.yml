@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # 🖥️ Homelab principal — Node Exporter (red Docker interna)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # 🪟 PC Windows — Windows Exporter
+  - job_name: 'windows'
+    static_configs:
+      - targets: ['IP-PC-WINDOWS:9182']
+
+  # 🛡️ AdGuard Home — métricas DNS
+  - job_name: 'adguard'
+    static_configs:
+      - targets: ['adguard-exporter:9617']
+
+  # 🖧 Homelab secundario — Node Exporter por IP de red local
+  - job_name: 'node-secundario'
+    static_configs:
+      - targets: ['IP-HOMELAB-SECUNDARIO:9100']
+        labels:
+          instance: 'homelab-secundario'

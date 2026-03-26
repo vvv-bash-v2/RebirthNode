@@ -1,0 +1,186 @@
+services:
+
+  # ─── 📊 MONITORIZACIÓN ──────────────────────────────────────────
+  node-exporter:
+    image: prom/node-exporter:latest
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+  adguard-exporter:
+    image: ebrianne/adguard-exporter:latest
+    container_name: adguard-exporter
+    restart: always
+    ports:
+      - "9617:9617"
+    environment:
+      - adguard_protocol=http
+      - adguard_hostname=adguardhome
+      - adguard_port=3000
+      - adguard_username=${ADGUARD_USER}
+      - adguard_password=${ADGUARD_PASSWORD}
+      - interval=30s
+      - log_limit=10000
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    volumes:
+      - ./uptime-kuma:/app/data
+    ports:
+      - "3001:3001"
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus:/etc/prometheus
+    ports:
+      - "9090:9090"
+    restart: always
+
+  # CRÍTICO: user "472" y volumen son OBLIGATORIOS para persistencia
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    restart: always
+    user: "472"
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+
+  # ─── 🛡️ DNS ────────────────────────────────────────────────────
+  adguardhome:
+    image: adguard/adguardhome
+    container_name: adguardhome
+    restart: always
+    volumes:
+      - ./adguard/work:/opt/adguardhome/work
+      - ./adguard/conf:/opt/adguardhome/conf
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "3002:3000/tcp"
+      - "853:853/tcp"
+      - "784:784/udp"
+
+  # ─── 🔀 PROXY Y SEGURIDAD ───────────────────────────────────────
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"
+    volumes:
+      - ./npm/data:/data
+      - ./npm/letsencrypt:/etc/letsencrypt
+
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: always
+    ports:
+      - "8082:80"
+    volumes:
+      - ./vaultwarden/data:/data
+    environment:
+      - DOMAIN=${VAULTWARDEN_DOMAIN}
+      - SIGNUPS_ALLOWED=false
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+
+  # ─── 📱 NOTIFICACIONES Y AUTOMATIZACIÓN ─────────────────────────
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    restart: always
+    ports:
+      - "8083:80"
+    volumes:
+      - ./ntfy/data:/var/lib/ntfy
+    command: serve
+    environment:
+      - NTFY_BASE_URL=${NTFY_BASE_URL}
+      - NTFY_CACHE_FILE=/var/lib/ntfy/cache.db
+      - NTFY_AUTH_FILE=/var/lib/ntfy/auth.db
+      - NTFY_AUTH_DEFAULT_ACCESS=deny-all
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n/data:/home/node/.n8n
+    environment:
+      - GENERIC_TIMEZONE=Europe/Madrid
+      - TZ=Europe/Madrid
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - N8N_SECURE_COOKIE=false
+      - N8N_HIRING_BANNER_ENABLED=false
+
+  # ─── 🐋 GESTIÓN ─────────────────────────────────────────────────
+  portainer:
+    image: portainer/portainer-ce:latest
+    ports:
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./portainer/data:/data
+    restart: always
+
+  homarr:
+    container_name: homarr
+    image: ghcr.io/ajnart/homarr:latest
+    restart: always
+    ports:
+      - "7575:7575"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./homarr/configs:/app/data/configs
+      - ./homarr/data:/data
+      - ./homarr/icons:/app/public/icons
+
+  # ─── 🔄 ACTUALIZACIONES ─────────────────────────────────────────
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_SCHEDULE=0 0 4 * * *
+      - WATCHTOWER_CLEANUP=true
+      - DOCKER_API_VERSION=1.54
+
+  # ─── 🔁 SINCRONIZACIÓN ──────────────────────────────────────────
+  syncthing:
+    image: syncthing/syncthing:latest
+    container_name: syncthing
+    restart: unless-stopped
+    ports:
+      - "8384:8384"
+      - "22000:22000/tcp"
+      - "22000:22000/udp"
+    volumes:
+      - ./syncthing/config:/var/syncthing/config
+      - ./syncthing/data:/var/syncthing/data
+    environment:
+      TZ: "Europe/Madrid"

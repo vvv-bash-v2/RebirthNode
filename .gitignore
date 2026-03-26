@@ -1,0 +1,59 @@
+# ══════════════════════════════════════════════════════════════════
+# CREDENCIALES Y SECRETOS — NUNCA subir a Git
+# ══════════════════════════════════════════════════════════════════
+.env
+*.key
+*.pem
+*.p12
+secrets/
+certs/*.key
+certs/*.crt
+
+# ══════════════════════════════════════════════════════════════════
+# DATOS DE SERVICIOS — Demasiado grandes o sensibles
+# ══════════════════════════════════════════════════════════════════
+data/
+grafana/data/
+vaultwarden/data/
+n8n/data/
+ntfy/data/
+portainer/data/
+syncthing/config/
+syncthing/data/
+uptime-kuma/
+adguard/work/
+adguard/conf/
+pihole/etc-pihole/
+pihole/etc-dnsmasq/
+npm/data/
+npm/letsencrypt/
+homarr/configs/
+homarr/data/
+prometheus/data/
+
+# ══════════════════════════════════════════════════════════════════
+# SISTEMA OPERATIVO
+# ══════════════════════════════════════════════════════════════════
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ══════════════════════════════════════════════════════════════════
+# EDITORES
+# ══════════════════════════════════════════════════════════════════
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ══════════════════════════════════════════════════════════════════
+# LOGS
+# ══════════════════════════════════════════════════════════════════
+*.log
+logs/
