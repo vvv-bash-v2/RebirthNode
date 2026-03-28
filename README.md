@@ -1,4 +1,4 @@
-# 🏠 Homelab Dual — Infraestructura Self-Hosted Completa
+# 🏠 RebirthNode - Homelab Dual — Infraestructura Self-Hosted Completa
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue)](https://docs.docker.com/compose/)
